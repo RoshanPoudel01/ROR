@@ -1,0 +1,50 @@
+services:
+  db:
+    image: postgres
+    restart: always
+    env_file:
+      - .env
+    environment:
+      PGDATA: /var/lib/postgresql/data
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    networks:
+      - ams-network
+
+  web:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails s -b '0.0.0.0' -p 8080"
+    volumes:
+      - ./:/rails:rw
+      - ./log:/rails/log
+      - ./.env:/rails/.env
+    ports:
+      - "8080:8080"
+
+    env_file:
+      - .env
+    depends_on:
+      - db
+    networks:
+      - ams-network
+
+networks:
+  ams-network:
+    # external: true
+    driver: bridge
+
+volumes:
+  db_data:
