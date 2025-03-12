@@ -9,6 +9,11 @@ Rails.application.routes.draw do
       end
       resources :users
       resources :artists
+      resources :music do
+        collection do
+          get "show_by_artist/:artist_id", action: :show_by_artist
+        end
+      end
     end
   end
 end
