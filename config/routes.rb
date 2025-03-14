@@ -8,6 +8,8 @@ Rails.application.routes.draw do
         post :login, on: :collection
       end
       resources :users
+      resources :roles
+      resources :permissions
       resources :artists
       resources :music do
         collection do
