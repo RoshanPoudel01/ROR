@@ -1,5 +1,7 @@
 class ArtistService
+    require 'csv'
     def initialize
+        @artists
     end
 
     def all_artists
@@ -8,6 +10,7 @@ class ArtistService
 
     def create_artist(artist_params)
         Artist.new(artist_params).tap do |artist|
+            puts artist_params
             artist.save
         end
     end
@@ -24,4 +27,16 @@ class ArtistService
     def destroy_artist(artist)
         artist.destroy
     end
+
+    def to_csv
+        CSV.generate(headers: true) do |csv|
+          @artists =  Artist.all
+            @artists.each do |item|
+              csv << [item.name, item.id]
+            end
+        end
+    end
+
+    
+
 end

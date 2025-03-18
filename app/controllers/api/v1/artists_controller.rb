@@ -1,7 +1,6 @@
 class Api::V1::ArtistsController < ApplicationController
   include Paginatable
   before_action :authenticate
-  before_action :authorize_artist
   def initialize
     @artist_service = ArtistService.new
   end
@@ -17,7 +16,6 @@ class Api::V1::ArtistsController < ApplicationController
       error: "Internal server error",
       message: "Something went wrong. Please try again later."
     }, status: :internal_server_error
-  
   end
 
   def show
@@ -25,12 +23,12 @@ class Api::V1::ArtistsController < ApplicationController
     raise ActiveRecord::RecordNotFound if artist.nil?
     render json: artist, serializer: ArtistSerializer, adapter: :json, status: :ok
   rescue ActiveRecord::RecordNotFound
-    render json: { error: "Artist not found",message: "The artist you are looking for doesnot exist" }, status: :not_found
+    render json: { error: "Artist not found", message: "The artist you are looking for doesnot exist" }, status: :not_found
   rescue StandardError
     render json: {
       error: "Internal server error",
       message: "Something went wrong. Please try again later."
-    },status: :internal_server_error
+    }, status: :internal_server_error
   end
 
   def create
@@ -62,7 +60,7 @@ class Api::V1::ArtistsController < ApplicationController
     artist = @artist_service.find_artist(params[:id])
     raise ActiveRecord::RecordNotFound if artist.nil?
     updated_artist = @artist_service.update_artist(artist, artist_params)
-    
+
     if updated_artist.errors.any?
       raise ActiveRecord::RecordInvalid.new(updated_artist)
     elsif updated_artist.persisted?
@@ -74,13 +72,13 @@ class Api::V1::ArtistsController < ApplicationController
     end
   rescue ActiveRecord::RecordNotFound
     render json: { error: "Artist not found", meassage: "Ther artist you are looking for does not exist" }, status: :not_found
-  
+
   rescue ActiveRecord::RecordInvalid => e
     render json: {
       error: "Validation failed",
       message: "Please check the provided data.",
       details: e.record.errors.full_messages
-    },status: :unprocessable_entity
+    }, status: :unprocessable_entity
   rescue StandardError
     render json: {
       error: "Internal server error",
@@ -104,10 +102,37 @@ class Api::V1::ArtistsController < ApplicationController
       message: "Something went wrong. Please try again later."
     }, status: :internal_server_error
   end
+
+  def export
+    @artists = Artist.all
+    csv_data = @artists.to_csv
+    send_data csv_data, filename: "artists-#{Date.today}.csv", type: "text/csv"
+  end
+
+  def import
+    file = params[:file]
+    Artist.import_csv(file)
+    render json: { message: "Artists imported successfully" }, status: :ok
+  rescue ActiveRecord::RecordInvalid => e
+    render json: {
+      error: "Validation failed",
+      message: "Please check the provided data.",
+      details: e.record.errors.full_messages
+    }, status: :unprocessable_entity
+
+  rescue StandardError => e
+    render json: {
+      error: "Internal server error",
+      message: e
+    }, status: :internal_server_error
+  end
+
   def authorize_artist
     policy = ArtistPolicy.new(current_user)
     action = action_name
-    puts "authorize artist"
+    unless policy.public_send("#{action}?")
+      render json: { error: "You do not have permission to perform this action" }, status: :forbidden
+    end
   end
   private
 

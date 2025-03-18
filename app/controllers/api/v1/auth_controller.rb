@@ -21,8 +21,8 @@ class Api::V1::AuthController < ApplicationController
             },status: :ok
         else
             render json:{
-                error: "Invalid username or password",status: :unauthorized
-            }
+                error: "Invalid username or password",
+            },status: :internal_server_error
         end
     end
 
@@ -83,11 +83,11 @@ class Api::V1::AuthController < ApplicationController
     def authorize
         policy = AuthPolicy.new(current_user)
         action = action_name
-        unless policy.public_send('#{action?}')
-            render json: {
-                error: "You do not have persmission to perform this action"
-            },status: :forbidden
-        end
+        # unless policy.public_send("#{action?}")
+        #     render json: {
+        #         error: "You do not have persmission to perform this action"
+        #     },status: :forbidden
+        # end
     end
 
     private 

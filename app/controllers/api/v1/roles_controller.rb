@@ -1,7 +1,7 @@
 class Api::V1::RolesController < ApplicationController
     include Paginatable
     before_action :authenticate
-
+    before_action :authorize_role
     def initialize
         @role_service = RoleService.new
     end
@@ -102,6 +102,15 @@ class Api::V1::RolesController < ApplicationController
                 message: e.to_s
             }, status: :internal_server_error
     end
+
+    def authorize_role
+        policy = RolePolicy.new(current_user)
+        action = action_name
+    
+        unless policy.public_send("#{action}?")
+          render json: { error: "You do not have permission to perform this action" }, status: :forbidden
+        end
+      end
     private
     def roles_params
         params.require(:role).permit(:name, :description)
