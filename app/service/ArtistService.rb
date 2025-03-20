@@ -1,11 +1,11 @@
 class ArtistService
-    require 'csv'
+    require "csv"
     def initialize
         @artists
     end
 
     def all_artists
-        Artist.all
+        Artist.all.order(id: :asc)
     end
 
     def create_artist(artist_params)
@@ -32,11 +32,8 @@ class ArtistService
         CSV.generate(headers: true) do |csv|
           @artists =  Artist.all
             @artists.each do |item|
-              csv << [item.name, item.id]
+              csv << [ item.name, item.id ]
             end
         end
     end
-
-    
-
 end

@@ -4,7 +4,7 @@ class MusicService
     end
 
     def all_musics
-        Music.all
+        Music.all.order(id: :asc)
     end
 
     def create_music(music_params)
