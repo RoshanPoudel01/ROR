@@ -104,13 +104,26 @@ class Api::V1::ArtistsController < ApplicationController
   end
 
   def export
-    @artists = Artist.all
-    csv_data = @artists.to_csv
-    send_data csv_data, filename: "artists-#{Date.today}.csv", type: "text/csv"
+    artists = @artist_service.all_artists
+    if artists.empty?
+      render json: { error: "No data found" }, status: :not_found
+    else
+    @artists = paginate(artists)
+    render json: @artists, each_serializer: ArtistSerializer, adapter: :json, status: :ok
+    end
+  rescue StandardError
+    render json: {
+      error: "Internal server error",
+      message: "Something went wrong. Please try again later."
+    }, status: :internal_server_error
   end
 
   def import
     file = params[:file]
+    if file.nil?
+      render json: { error: "Please provide a file to import" }, status: :bad_request
+      return
+    end
     Artist.import_csv(file)
     render json: { message: "Artists imported successfully" }, status: :ok
   rescue ActiveRecord::RecordInvalid => e
